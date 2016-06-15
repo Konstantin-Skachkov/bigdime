@@ -100,7 +100,7 @@ public class MetadataStoreImplTest {
 	 */
 
 	@BeforeTest
-	public void init() throws Exception {
+	public void init() {
 
 		initMocks(this);
 		metaStore = new MetadataStoreImpl();

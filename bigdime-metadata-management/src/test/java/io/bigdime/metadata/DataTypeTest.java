@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.mockito.Mock;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -47,12 +48,15 @@ public class DataTypeTest {
 		Field[] fields = FieldUtils.getAllFields(DataType.class);
 		for (Field f : fields) {
 			if (f.getType() == String.class) {
-				GetterSetterTestHelper.doTest(dataType, f.getName(),
-						"UNIT-TEST-" + f.getName());
+				ReflectionTestUtils.invokeSetterMethod(dataType, f.getName(), "UNIT-TEST-" + f.getName());
+				Object gotValue = ReflectionTestUtils.invokeGetterMethod(dataType, f.getName());
+				Assert.assertEquals("UNIT-TEST-" + f.getName(), gotValue);
 			}
 
 			if (f.getType() == int.class) {
-				GetterSetterTestHelper.doTest(dataType, f.getName(), 2);
+				ReflectionTestUtils.invokeSetterMethod(dataType, f.getName(), 2);
+				Object gotValue = ReflectionTestUtils.invokeGetterMethod(dataType, f.getName());
+				Assert.assertEquals(2, gotValue);
 			}
 
 		}

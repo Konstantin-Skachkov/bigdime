@@ -17,6 +17,7 @@ import org.mockito.Mockito;
 
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -58,12 +59,15 @@ public class AttributeTest {
 		Field[] fields = FieldUtils.getAllFields(Attribute.class);
 		for (Field f : fields) {
 			if (f.getType() == String.class) {
-				GetterSetterTestHelper.doTest(attribute, f.getName(),
-						"UNIT-TEST-" + f.getName());
+				ReflectionTestUtils.invokeSetterMethod(attribute, f.getName(), "UNIT-TEST-" + f.getName());
+				Object gotValue = ReflectionTestUtils.invokeGetterMethod(attribute, f.getName());
+				Assert.assertEquals("UNIT-TEST-" + f.getName(), gotValue);
 			}
 
 			if (f.getType() == Integer.class) {
-				GetterSetterTestHelper.doTest(attribute, f.getName(), 2);
+				ReflectionTestUtils.invokeSetterMethod(attribute, f.getName(), 2);
+				Object gotValue = ReflectionTestUtils.invokeGetterMethod(attribute, f.getName());
+				Assert.assertEquals(2, gotValue);
 			}
 
 		}

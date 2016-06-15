@@ -6,12 +6,18 @@ package io.bigdime.metadata;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import java.io.ByteArrayOutputStream;
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -21,9 +27,10 @@ import org.mockito.stubbing.Answer;
 import static org.mockito.Mockito.*;
 
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.util.Assert;
+//import org.springframework.util.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import org.testng.Assert;
 
 import io.bigdime.adaptor.metadata.dto.AttributeDTO;
 import io.bigdime.adaptor.metadata.dto.DataTypeDTO;
@@ -88,7 +95,7 @@ public class MetadataRepositoryServiceTest {
 	 */
 
 	@BeforeClass
-	public void init() throws Exception {
+	public void init() {
 
 		initMocks(this);
 		repoService = new MetadataRepositoryService();
@@ -254,6 +261,13 @@ public class MetadataRepositoryServiceTest {
 		repoService.remove(metasegment, false);
 
 	}
+	
+	@SuppressWarnings("unchecked")
+	@Test(expectedExceptions=IllegalArgumentException.class)
+	public void removeIllegalArgumentExceptionCheck() {
+		repoService.remove(null, false);
+
+	}
 
 	@Test
 	@SuppressWarnings("unchecked")
@@ -298,11 +312,11 @@ public class MetadataRepositoryServiceTest {
 		when(repoEnts.getVersion()).thenReturn(1.0);
 
 		when(metasegment.getEntitees().size()).thenReturn(1);
-		repoService.checkUpdateEligibility(metasegment);
+		Assert.assertTrue(repoService.checkUpdateEligibility(metasegment));
 
 		when(metasegment.getEntitees().size()).thenReturn(2);
-		repoService.checkUpdateEligibility(metasegment);
-
+		Assert.assertFalse(repoService.checkUpdateEligibility(metasegment));
+		
 	}
 
 	/**
@@ -364,10 +378,10 @@ public class MetadataRepositoryServiceTest {
 				.thenReturn(entities);
 
 		when(metasegment.getEntitees().size()).thenReturn(1);
-		repoService.schemaExists(metasegment);
+		Assert.assertTrue(repoService.schemaExists(metasegment));
 
 		when(metasegment.getEntitees().size()).thenReturn(2);
-		repoService.schemaExists(metasegment);
+		Assert.assertFalse(repoService.schemaExists(metasegment));
 
 	}
 
@@ -382,15 +396,31 @@ public class MetadataRepositoryServiceTest {
 				.mock(MetadataRepository.class);
 		ReflectionTestUtils.setField(repoService, "repository",
 				mockMetadataRepository);
-
-		Set<String> mockStringSet = Mockito.mock(Set.class);
+		Set<String> mockStringSet =new HashSet<String>();
+		mockStringSet.add("test");
 		when(mockMetadataRepository.findAllDataSources()).thenReturn(
 				mockStringSet);
+       
+		for(String dataSource:repoService.getDistinctDataSources()){
+			Assert.assertEquals(dataSource, "test");
+		}
+	}
+	
+	/**
+	 * Test: Get if distinct data sources available in repository is Empty
+	 */
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testGetDistinctdataSourcesEmpty() {
 
-		repoService.getDistinctDataSources();
-
-		when(mockStringSet.isEmpty()).thenReturn(true);
-		repoService.getDistinctDataSources();
+		MetadataRepository mockMetadataRepository = Mockito
+				.mock(MetadataRepository.class);
+		ReflectionTestUtils.setField(repoService, "repository",
+				mockMetadataRepository);
+		Set<String> stringSet =new HashSet<String>();
+		when(mockMetadataRepository.findAllDataSources()).thenReturn(
+				stringSet);
+		Assert.assertTrue(repoService.getDistinctDataSources().isEmpty());
 	}
 
 	/**
@@ -407,15 +437,12 @@ public class MetadataRepositoryServiceTest {
 
 		when(metasegment.getAdaptorName()).thenReturn("testApplicationName");
 		when(metasegment.getSchemaType()).thenReturn("testSchemaType");
-		when(entities.getEntityName()).thenReturn("testSchemaType");
+		when(entities.getEntityName()).thenReturn("testEntityName");
 
 		when(
 				mockMetadataRepository.findByAdaptorNameAndSchemaType(
 						anyString(), anyString())).thenReturn(null);
-		repoService.getSchema(metasegment.getAdaptorName(),
-				metasegment.getSchemaType(), entities.getEntityName());
-
-		MetasegmentDTO repoSegment = Mockito.mock(MetasegmentDTO.class);
+    	MetasegmentDTO repoSegment = Mockito.mock(MetasegmentDTO.class);
 		when(
 				mockMetadataRepository.findByAdaptorNameAndSchemaType(
 						anyString(), anyString())).thenReturn(repoSegment);
@@ -453,80 +480,20 @@ public class MetadataRepositoryServiceTest {
 		when(repoSegment.getUpdatedBy()).thenReturn("testUser");
 		when(mockEntityRepository.findByIdAndEntityName(anyInt(), anyString()))
 				.thenReturn(null);
-		repoService.getSchema(metasegment.getAdaptorName(),
-				metasegment.getSchemaType(), entities.getEntityName());
-
+		Assert.assertEquals(repoService.getSchema(metasegment.getAdaptorName(),metasegment.getSchemaType(), entities.getEntityName()).getAdaptorName(),"testApplicationName");
+		Assert.assertEquals(repoService.getSchema(metasegment.getAdaptorName(),metasegment.getSchemaType(), entities.getEntityName()).getDatabaseName(),"testDatabaseName");
+		Assert.assertEquals(repoService.getSchema(metasegment.getAdaptorName(),metasegment.getSchemaType(), entities.getEntityName()).getDatabaseLocation(),"testDatabaseLocation");
+		Assert.assertEquals(repoService.getSchema(metasegment.getAdaptorName(),metasegment.getSchemaType(), entities.getEntityName()).getRepositoryType(),"testRepositoryType");
+		Assert.assertEquals(repoService.getSchema(metasegment.getAdaptorName(),metasegment.getSchemaType(), entities.getEntityName()).getIsDataSource(),"Y");
+		Assert.assertEquals(repoService.getSchema(metasegment.getAdaptorName(),metasegment.getSchemaType(), entities.getEntityName()).getDescription(),"testDescription");
+		Assert.assertEquals(repoService.getSchema(metasegment.getAdaptorName(),metasegment.getSchemaType(), entities.getEntityName()).getCreatedBy(),"testUser");
+		Assert.assertEquals(repoService.getSchema(metasegment.getAdaptorName(),metasegment.getSchemaType(), entities.getEntityName()).getUpdatedBy(),"testUser");
+		
 		EntiteeDTO entits = Mockito.mock(EntiteeDTO.class);
 		when(mockEntityRepository.findByIdAndEntityName(anyInt(), anyString()))
 				.thenReturn(entits);
 
-		repoService.getSchema(metasegment.getAdaptorName(),
-				metasegment.getSchemaType(), entities.getEntityName());
-
-	}
-
-	@Test
-	@SuppressWarnings("unchecked")
-	public void testGetSchemaNotNull() {
-
-		MetadataRepository mockMetadataRepository = Mockito
-				.mock(MetadataRepository.class);
-		ReflectionTestUtils.setField(repoService, "repository",
-				mockMetadataRepository);
-
-		when(metasegment.getAdaptorName()).thenReturn("testApplicationName");
-		when(metasegment.getSchemaType()).thenReturn("testSchemaType");
-		when(entities.getEntityName()).thenReturn("testSchemaType");
-
-		when(
-				mockMetadataRepository.findByAdaptorNameAndSchemaType(
-						anyString(), anyString())).thenReturn(null);
-		repoService.getSchema(metasegment.getAdaptorName(),
-				metasegment.getSchemaType(), entities.getEntityName());
-
-		MetasegmentDTO repoSegment = Mockito.mock(MetasegmentDTO.class);
-		when(
-				mockMetadataRepository.findByAdaptorNameAndSchemaType(
-						anyString(), anyString())).thenReturn(repoSegment);
-
-		Set<EntiteeDTO> mockRepoEntitySet = (Set<EntiteeDTO>) Mockito
-				.mock(Set.class);
-		Iterator<EntiteeDTO> repoEntityIterator = Mockito.mock(Iterator.class);
-
-		EntiteeDTO ents = Mockito.mock(EntiteeDTO.class);
-
-		when(repoSegment.getEntitees()).thenReturn(mockRepoEntitySet);
-
-		when(mockRepoEntitySet.iterator()).thenReturn(repoEntityIterator);
-		when(repoEntityIterator.hasNext()).thenReturn(true, false);
-		when(repoEntityIterator.next()).thenReturn(ents);
-
-		EntitiesRepository mockEntityRepository = Mockito
-				.mock(EntitiesRepository.class);
-		ReflectionTestUtils.setField(repoService, "entityRepository",
-				mockEntityRepository);
-
-		when(ents.getId()).thenReturn(1);
-		when(repoSegment.getId()).thenReturn(1);
-		when(repoSegment.getAdaptorName()).thenReturn("testApplicationName");
-		when(repoSegment.getDatabaseName()).thenReturn("testDatabaseName");
-		when(repoSegment.getDatabaseLocation()).thenReturn(
-				"testDatabaseLocation");
-		when(repoSegment.getRepositoryType()).thenReturn("testRepositoryType");
-		when(repoSegment.getIsDataSource()).thenReturn("Y");
-		when(repoSegment.getDescription()).thenReturn("testDescription");
-		when(repoSegment.getCreatedAt()).thenReturn(Mockito.mock(Date.class));
-		when(repoSegment.getCreatedBy()).thenReturn("testUser");
-		when(repoSegment.getUpdatedAt()).thenReturn(Mockito.mock(Date.class));
-		when(repoSegment.getUpdatedBy()).thenReturn("testUser");
-
-		EntiteeDTO entits = Mockito.mock(EntiteeDTO.class);
-		when(mockEntityRepository.findByIdAndEntityName(anyInt(), anyString()))
-				.thenReturn(entits);
-		// when(entits == null).thenReturn(false);
-		repoService.getSchema(metasegment.getAdaptorName(),
-				metasegment.getSchemaType(), entities.getEntityName());
-
+		Assert.assertEquals(repoService.getSchema(metasegment.getAdaptorName(),metasegment.getSchemaType(), entities.getEntityName()).getEntitees().isEmpty(), true);
 	}
 
 	/**
@@ -541,22 +508,44 @@ public class MetadataRepositoryServiceTest {
 				.mock(MetadataRepository.class);
 		ReflectionTestUtils.setField(repoService, "repository",
 				mockMetadataRepository);
-		List<MetasegmentDTO> metasegments = Mockito.mock(List.class);
-
+		List<MetasegmentDTO> metasegments =new ArrayList<MetasegmentDTO>();
+		MetasegmentDTO metasegmentDTO=new MetasegmentDTO();
+		metasegmentDTO.setAdaptorName("testAdaptorName");
+		metasegmentDTO.setDatabaseName("testDBName");
+		metasegmentDTO.setDatabaseLocation("testDBLocation");
+		metasegmentDTO.setDescription("testDescription");
+		metasegments.add(metasegmentDTO);
 		when(mockMetadataRepository.findAll()).thenReturn(metasegments);
-		when(metasegments.isEmpty()).thenReturn(true);
-		repoService.getAllSegments();
+		
+		for(MetasegmentDTO metasegmentsDTO:repoService.getAllSegments()){
+			Assert.assertEquals(metasegmentsDTO.getAdaptorName(), "testAdaptorName");
+			Assert.assertEquals(metasegmentsDTO.getDatabaseName(), "testDBName");
+			Assert.assertEquals(metasegmentsDTO.getDatabaseLocation(), "testDBLocation");
+			Assert.assertEquals(metasegmentsDTO.getDescription(), "testDescription");
+		}
+	}
+	
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testGetAllSegmentsEmpty() {
 
-		when(metasegments.isEmpty()).thenReturn(false);
-		repoService.getAllSegments();
+		MetadataRepository mockMetadataRepository = Mockito
+				.mock(MetadataRepository.class);
+		ReflectionTestUtils.setField(repoService, "repository",
+				mockMetadataRepository);
+		List<MetasegmentDTO> metasegments =new ArrayList<MetasegmentDTO>();
+		when(mockMetadataRepository.findAll()).thenReturn(metasegments);
+		Assert.assertTrue(repoService.getAllSegments().isEmpty());
+
 
 	}
+
 
 	/**
 	 * Test: Get All Entities(Tables) associated to an Adaptor
 	 */
 	@Test
-	public void testGetAllEntites() {
+	public void testGetAllEntitesNull() {
 
 		MetadataRepository mockMetadataRepository = Mockito
 				.mock(MetadataRepository.class);
@@ -568,8 +557,8 @@ public class MetadataRepositoryServiceTest {
 		when(
 				mockMetadataRepository.findByAdaptorNameAndSchemaType(
 						anyString(), anyString())).thenReturn(null);
-		repoService.getAllEntites(metasegment.getAdaptorName(),
-				metasegment.getSchemaType());
+		Assert.assertNull(repoService.getAllEntites(metasegment.getAdaptorName(),
+				metasegment.getSchemaType()));
 
 	}
 
@@ -590,14 +579,9 @@ public class MetadataRepositoryServiceTest {
 				mockMetadataRepository.findByAdaptorNameAndSchemaType(
 						anyString(), anyString())).thenReturn(mockRepoSegment);
 		when(mockRepoSegment.getEntitees()).thenReturn(entiteeSet);
-		when(entiteeSet.isEmpty()).thenReturn(true);
-		repoService.getAllEntites(metasegment.getAdaptorName(),
-				metasegment.getSchemaType());
-
 		when(entiteeSet.isEmpty()).thenReturn(false);
-		repoService.getAllEntites(metasegment.getAdaptorName(),
-				metasegment.getSchemaType());
-
+		Assert.assertNotNull(repoService.getAllEntites(metasegment.getAdaptorName(),
+				metasegment.getSchemaType()));
 	}
 
 	@Test
@@ -614,7 +598,7 @@ public class MetadataRepositoryServiceTest {
 		when(mockMetadataRepository.findByAdaptorName(Mockito.anyString()))
 				.thenReturn(mockMetasegmentDTOList);
 		when(mockMetasegmentDTOList.isEmpty()).thenReturn(false);
-		Assert.notNull(repoService.getAllSegments("testAdaptorName"));
+		Assert.assertNotNull(repoService.getAllSegments("testAdaptorName"));
 	}
 
 	@Test
@@ -626,12 +610,10 @@ public class MetadataRepositoryServiceTest {
 				mockMetadataRepository);
 
 		@SuppressWarnings("unchecked")
-		List<MetasegmentDTO> mockMetasegmentDTOList = Mockito.mock(List.class);
+		List<MetasegmentDTO> mockMetasegmentDTOList = new ArrayList<MetasegmentDTO>();
 		when(mockMetadataRepository.findByAdaptorName(Mockito.anyString()))
 				.thenReturn(mockMetasegmentDTOList);
-		when(mockMetasegmentDTOList.isEmpty()).thenReturn(true);
-
-		Assert.notNull(repoService.getAllSegments("testAdaptorName"));
+		Assert.assertTrue(repoService.getAllSegments("testAdaptorName").isEmpty());
 	}
 
 }
