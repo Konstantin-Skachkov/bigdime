@@ -3,18 +3,7 @@
  */
 package io.bigdime.handler.hive;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.bigdime.adaptor.metadata.MetadataAccessException;
 import io.bigdime.adaptor.metadata.MetadataStore;
 import io.bigdime.adaptor.metadata.model.Metasegment;
@@ -28,12 +17,10 @@ import io.bigdime.core.runtimeinfo.RuntimeInfo;
 import io.bigdime.core.runtimeinfo.RuntimeInfoStore;
 import io.bigdime.core.runtimeinfo.RuntimeInfoStoreException;
 import io.bigdime.libs.hive.database.HiveDBManger;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hive.hcatalog.common.HCatException;
 import org.apache.http.client.ClientProtocolException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +30,16 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Properties;
+
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.when;
 
 @ContextConfiguration(classes = { MetaDataJsonUtils.class})
 public class HiveMetaDataHandlerTest extends AbstractTestNGSpringContextTests{
@@ -71,7 +68,7 @@ public class HiveMetaDataHandlerTest extends AbstractTestNGSpringContextTests{
 	}
 	
 	@Test
-	public void testProcess() throws ClientProtocolException, IOException, InterruptedException, MetadataAccessException, HandlerException, RuntimeInfoStoreException{
+	public void testProcess() throws ClientProtocolException, IOException, InterruptedException, MetadataAccessException, HandlerException, RuntimeInfoStoreException {
 		cleanUp();
 		HiveMetaDataHandler hiveMetaDataHandler = mockHiveMetaDataHandler();
 		HandlerContext handlerContext = HandlerContext.get();
@@ -91,12 +88,12 @@ public class HiveMetaDataHandlerTest extends AbstractTestNGSpringContextTests{
 		actionEvents.add(actionEvent);
 		handlerContext.setEventList(actionEvents);
 		@SuppressWarnings("unchecked")
-		RuntimeInfoStore<RuntimeInfo> runtimeInfoStore = mock(RuntimeInfoStore.class);
-		RuntimeInfo runtimeInfo = mock(RuntimeInfo.class);
+		RuntimeInfoStore<RuntimeInfo> runtimeInfoStore = Mockito.mock(RuntimeInfoStore.class);
+		RuntimeInfo runtimeInfo = Mockito.mock(RuntimeInfo.class);
 		when(runtimeInfoStore.get(anyString(), anyString(), anyString())).thenReturn(null);
 		ReflectionTestUtils.setField(hiveMetaDataHandler, "runtimeInfoStore", runtimeInfoStore);
 		when(runtimeInfoStore.getLatest(anyString(), anyString())).thenReturn(runtimeInfo);
-		when(runtimeInfoStore.put(any(RuntimeInfo.class))).thenReturn(true);
+		when(runtimeInfoStore.put(Mockito.any(RuntimeInfo.class))).thenReturn(true);
 		hiveMetaDataHandler.process();
 	}
 	
