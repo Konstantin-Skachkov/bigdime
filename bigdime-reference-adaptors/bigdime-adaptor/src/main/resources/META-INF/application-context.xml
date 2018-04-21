@@ -10,7 +10,7 @@
 
 	<context:annotation-config />
 	<context:component-scan
-		base-package="io.bigdime.adaptor.metadata, io.bigdime.runtimeinfo" />
+		base-package="io.bigdime.adaptor.metadata, io.bigdime.runtimeinfo, io.bigdime.ext" />
 	<context:property-placeholder location="classpath:${env.properties}"
 		 ignore-resource-not-found="false" ignore-unresolvable="true" />
 		
@@ -27,12 +27,12 @@
 		<property name="url" value="${database.url:${metastore.database.url}}" />
 		<property name="username" value="${database.username:${metastore.database.username}}" />
 		<property name="password" value="${database.password:${metastore.database.password}}" />
-		<property name="initialSize" value="20" />
-		<property name="maxActive" value="10" />
+		<property name="initialSize" value="${metastore.database.initialSize:5}" />
+		<property name="maxActive" value="${metastore.database.maxActive:5}" />
 		<property name="testOnBorrow" value="true"/>
 		<property name="minEvictableIdleTimeMillis" value="120000"/>
 		<property name="timeBetweenEvictionRunsMillis" value="120000"/>
-		<property name="minIdle" value="10"/>
+		<property name="minIdle" value="1"/>
 	</bean>
 	
 	<bean name="lazyConnectionDataSourceProxy" class="org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy">
@@ -40,17 +40,17 @@
 </bean>
 
 
-	<bean id="datasource" class="org.apache.commons.dbcp.BasicDataSource">
+	<bean id="datasource" class="org.apache.commons.dbcp.BasicDataSource" primary="true">
 		<property name="driverClassName" value="${metastore.database.driverClassName}" />
 		<property name="url" value="${metastore.database.url}" />
 		<property name="username" value="${metastore.database.username}" />
 		<property name="password" value="${metastore.database.password}" />
-		<property name="initialSize" value="20" />
-		<property name="maxActive" value="10" />
+		<property name="initialSize" value="${metastore.database.initialSize:5}" />
+		<property name="maxActive" value="${metastore.database.maxActive:5}" />
 		<property name="testOnBorrow" value="true"/>
 		<property name="minEvictableIdleTimeMillis" value="120000"/>
 		<property name="timeBetweenEvictionRunsMillis" value="120000"/>
-		<property name="minIdle" value="10"/>
+		<property name="minIdle" value="1"/>
 	</bean>
 
 	<bean id="entityManagerFactory"
